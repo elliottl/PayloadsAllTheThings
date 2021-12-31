@@ -63,10 +63,11 @@ Using CRLF to bypass "javascript" blacklisted keyword
 java%0d%0ascript%0d%0a:alert(0)
 ```
 
-Using "//" to bypass "http" blacklisted keyword
+Using "//" & "////" to bypass "http" blacklisted keyword
 
 ```powershell
 //google.com
+////google.com
 ```
 
 Using "https:" to bypass "//" blacklisted keyword
@@ -113,6 +114,14 @@ Creating folder as their domain
 http://www.yoursite.com/http://www.theirsite.com/
 http://www.yoursite.com/folder/www.folder.com
 ```
+
+Using "?" characted, browser will translate it to "/?"
+
+```powershell
+http://www.yoursite.com?http://www.theirsite.com/
+http://www.yoursite.com?folder/www.folder.com
+```
+
 
 Host/Split Unicode Normalization
 ```powershell
