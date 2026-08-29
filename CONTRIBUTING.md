@@ -12,13 +12,13 @@ In order to provide the safest payloads for the community, the following rules m
 
 - Payloads must be sanitized
     - Use `id`, and `whoami`, for RCE Proof of Concepts
-    - Use `[REDACTED]` when the user has to replace a domain for a callback. E.g: XSSHunter, BurpCollaborator etc.
+    - Use `[ATTACKER.DOMAIN.TLD]` when the user has to replace a domain for a callback. E.g: XSSHunter, BurpCollaborator etc.
     - Use `10.10.10.10` and `10.10.10.11` when the payload require IP addresses
     - Use `Administrator` for privileged users and `User` for normal account
     - Use `P@ssw0rd`, `Password123`, `password` as default passwords for your examples
     - Prefer commonly used name for machines such as `DC01`, `EXCHANGE01`, `WORKSTATION01`, etc
 - References must have an `author`, a `title`, a `link` and a `date`
-    - Use [Wayback Machine](wayback.archive.org) if the reference is not available anymore.
+    - Use [Wayback Machine](https://web.archive.org/) if the reference is not available anymore.
     - The date must be following the format `Month Number, Year`, e.g: `December 25, 2024`
     - References to Github repositories must follow this format: `[author/tool](https://github.com/URL) - Description`
 
@@ -30,7 +30,7 @@ docker run -v $PWD:/workdir davidanson/markdownlint-cli2:v0.15.0 "**/*.md" --con
 
 ## Techniques Folder
 
-Every section should contains the following files, you can use the `_template_vuln` folder to create a new technique folder:
+Every section should contain the following files, you can use the `_template_vuln` folder to create a new technique folder:
 
 - **README.md**: vulnerability description and how to exploit it, including several payloads, more below
 - **Intruder**: a set of files to give to Burp Intruder

